@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List
@@ -102,6 +103,10 @@ class ShiftItRequest(BaseModel):
 # ─── Root ─────────────────────────────────────────────────────────────────────
 @app.get("/")
 def root():
+    return FileResponse("index.html")
+
+@app.get("/health")
+def health():
     return {"message": "Eva is running. Think it. Say it. Done.", "version": "1.0.0"}
 
 # ─── SPEAK IT ────────────────────────────────────────────────────────────────
