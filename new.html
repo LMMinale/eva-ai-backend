@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Eva</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:       #f9fafb;
+    --surface:  #ffffff;
+    --border:   #e5e7eb;
+    --border2:  #d1d5db;
+    --text:     #111827;
+    --text2:    #6b7280;
+    --text3:    #9ca3af;
+    --primary:  #1d4ed8;
+    --primary-hover: #1e40af;
+    --danger:   #dc2626;
+    --warning:  #b45309;
+    --success:  #15803d;
+    --cat-work:     #1d4ed8;
+    --cat-family:   #15803d;
+    --cat-health:   #b45309;
+    --cat-personal: #7c3aed;
+    --cat-errand:   #dc2626;
+    --font: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --r: 6px;
+    --r-sm: 4px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
+    overflow-x: hidden;
+  }
+
+  svg { display: block; flex-shrink: 0; }
+
+  .screen { display: none; flex-direction: column; min-height: calc(100vh - 52px); padding-bottom: 72px; }
+  .screen.active { display: flex; }
+
+  /* Header */
+  .hdr {
+    padding: 20px 16px 14px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .hdr-app { font-size: 11px; color: var(--text3); margin-bottom: 2px; font-weight: 500; }
+  .hdr-title { font-size: 16px; font-weight: 600; color: var(--text); }
+  .hdr-sub { font-size: 13px; color: var(--text2); margin-top: 2px; }
+
+  /* Section label */
+  .sec-label { font-size: 11px; color: var(--text3); padding: 14px 16px 5px; font-weight: 500; }
+
+  /* Task rows */
+  .task-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    transition: background 150ms;
+  }
+  .task-row:first-child { border-top: 1px solid var(--border); }
+  .task-row:hover { background: var(--bg); }
+  .task-row.done { opacity: 0.42; }
+  .task-row.done .task-title { text-decoration: line-through; }
+
+  .cat-bar { width: 3px; height: 30px; border-radius: 2px; flex-shrink: 0; }
+  .task-info { flex: 1; min-width: 0; }
+  .task-title { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+  .task-meta { font-size: 12px; color: var(--text2); margin-top: 1px; }
+
+  .chk {
+    width: 18px; height: 18px; border-radius: var(--r-sm);
+    border: 1px solid var(--border2); background: var(--surface);
+    cursor: pointer; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: border-color 150ms, background 150ms; color: white;
+  }
+  .chk:hover { border-color: var(--primary); }
+  .chk.done { background: var(--primary); border-color: var(--primary); }
+
+  /* Input bar */
+  .input-bar {
+    position: fixed; bottom: 52px; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 430px;
+    background: var(--surface); border-top: 1px solid var(--border);
+    padding: 8px 12px; display: flex; align-items: center; gap: 6px; z-index: 100;
+  }
+  .input-bar input {
+    flex: 1; background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 7px 10px;
+    color: var(--text); font-family: var(--font); font-size: 14px; outline: none;
+    transition: border-color 150ms;
+  }
+  .input-bar input:focus { border-color: var(--primary); }
+  .input-bar input::placeholder { color: var(--text3); }
+
+  .icon-btn {
+    width: 32px; height: 32px; border-radius: var(--r);
+    border: 1px solid var(--border); background: var(--surface);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    color: var(--text2); transition: background 150ms, color 150ms; flex-shrink: 0;
+  }
+  .icon-btn:hover { background: var(--bg); color: var(--text); }
+  .icon-btn.primary { background: var(--primary); border-color: var(--primary); color: white; }
+  .icon-btn.primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+  .icon-btn.recording { background: var(--danger); border-color: var(--danger); color: white; }
+
+  /* Eva note */
+  .eva-note {
+    margin: 8px 16px; padding: 10px 12px;
+    background: #eff6ff; border: 1px solid #bfdbfe;
+    border-radius: var(--r); font-size: 13px; color: #1e40af; display: none;
+  }
+  .eva-note.show { display: block; }
+  .eva-note-lbl { font-size: 11px; font-weight: 600; color: #3b82f6; margin-bottom: 3px; }
+
+  /* Bottom nav */
+  .nav {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 430px;
+    background: var(--surface); border-top: 1px solid var(--border);
+    display: flex; z-index: 200; height: 52px;
+  }
+  .nav-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 2px;
+    cursor: pointer; border: none; background: transparent;
+    color: var(--text3); transition: color 150ms; padding: 6px 0; font-family: var(--font);
+  }
+  .nav-btn.active { color: var(--primary); }
+  .nav-btn .nl { font-size: 10px; font-weight: 500; }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    background: var(--primary); color: white; border: 1px solid var(--primary);
+    border-radius: var(--r); padding: 8px 14px;
+    font-family: var(--font); font-size: 13px; font-weight: 500; cursor: pointer;
+    transition: background 150ms; width: calc(100% - 32px); margin: 0 16px 12px;
+  }
+  .btn:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Loading */
+  .loading { display: none; align-items: center; gap: 8px; padding: 10px 16px; color: var(--text2); font-size: 13px; }
+  .loading.show { display: flex; }
+  .spin { width: 14px; height: 14px; border: 1.5px solid var(--border2); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.6s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Toast */
+  .toast {
+    position: fixed; top: 12px; left: 50%; transform: translateX(-50%) translateY(-60px);
+    background: var(--text); color: white; border-radius: var(--r); padding: 8px 14px;
+    font-size: 13px; font-weight: 500; z-index: 999; transition: transform 150ms ease;
+    white-space: nowrap; max-width: 320px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* Tabs */
+  .tab-bar {
+    display: flex; border-bottom: 1px solid var(--border);
+    background: var(--surface); padding: 0 16px;
+  }
+  .tab {
+    padding: 10px 10px 9px; font-size: 13px; font-weight: 500; color: var(--text2);
+    border: none; background: transparent; cursor: pointer;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+    transition: color 150ms, border-color 150ms; font-family: var(--font);
+    display: flex; align-items: center; gap: 5px;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+  /* Focus priorities */
+  .priority-item {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--surface);
+  }
+  .priority-item:first-child { border-top: 1px solid var(--border); }
+  .priority-num { font-size: 11px; font-weight: 600; color: var(--text3); min-width: 14px; padding-top: 2px; }
+  .priority-title { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+  .priority-reason { font-size: 12px; color: var(--text2); }
+  .urgency-tag {
+    display: inline-block; font-size: 11px; font-weight: 500; padding: 1px 6px;
+    border-radius: var(--r-sm); border: 1px solid; margin-top: 5px;
+  }
+  .urgency-high   { color: var(--danger);  border-color: #fca5a5; background: #fef2f2; }
+  .urgency-medium { color: var(--warning); border-color: #fcd34d; background: #fffbeb; }
+  .urgency-low    { color: var(--success); border-color: #86efac; background: #f0fdf4; }
+
+  /* Notice boxes */
+  .notice-box {
+    margin: 0 16px 8px; padding: 10px 12px;
+    border-radius: var(--r); border: 1px solid var(--border);
+    background: var(--bg); font-size: 13px; color: var(--text2);
+  }
+  .notice-box.warn   { background: #fffbeb; border-color: #fcd34d; color: var(--warning); }
+  .notice-box.danger { background: #fef2f2; border-color: #fca5a5; color: var(--danger); }
+  .notice-lbl { font-size: 11px; font-weight: 600; margin-bottom: 4px; }
+
+  /* Shift select */
+  .select-panel {
+    margin: 12px 16px; border: 1px solid var(--border);
+    border-radius: var(--r); background: var(--surface); overflow: hidden;
+  }
+  .select-panel-hdr {
+    padding: 7px 12px; font-size: 11px; font-weight: 600; color: var(--text2);
+    border-bottom: 1px solid var(--border); background: var(--bg);
+  }
+  .task-select-row {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+    border-bottom: 1px solid var(--border); cursor: pointer; transition: background 150ms;
+  }
+  .task-select-row:last-child { border-bottom: none; }
+  .task-select-row:hover { background: var(--bg); }
+  .sel-chk {
+    width: 16px; height: 16px; border-radius: var(--r-sm);
+    border: 1px solid var(--border2); background: var(--surface);
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    transition: all 150ms; color: white;
+  }
+  .sel-chk.selected { background: var(--primary); border-color: var(--primary); }
+  .sel-label { font-size: 13px; color: var(--text); }
+
+  /* Result blocks */
+  .result-block {
+    margin: 0 16px 8px; border: 1px solid var(--border);
+    border-radius: var(--r); background: var(--surface); overflow: hidden;
+  }
+  .result-block-hdr {
+    padding: 7px 12px; font-size: 11px; font-weight: 600; color: var(--text2);
+    border-bottom: 1px solid var(--border); background: var(--bg);
+  }
+  .result-item {
+    padding: 10px 12px; border-bottom: 1px solid var(--border);
+    font-size: 13px; color: var(--text2); line-height: 1.5;
+  }
+  .result-item:last-child { border-bottom: none; }
+  .result-item strong { color: var(--text); font-weight: 500; }
+
+  /* Plan */
+  .textarea-wrap {
+    margin: 12px 16px; border: 1px solid var(--border);
+    border-radius: var(--r); background: var(--surface); transition: border-color 150ms;
+  }
+  .textarea-wrap:focus-within { border-color: var(--primary); }
+  .textarea-wrap textarea {
+    width: 100%; background: transparent; border: none; outline: none;
+    color: var(--text); font-family: var(--font); font-size: 14px;
+    resize: none; min-height: 80px; padding: 12px; line-height: 1.5;
+  }
+  .textarea-wrap textarea::placeholder { color: var(--text3); }
+
+  .week-row { border-bottom: 1px solid var(--border); background: var(--surface); }
+  .week-row:first-child { border-top: 1px solid var(--border); }
+  .week-hdr {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px; cursor: pointer; transition: background 150ms;
+  }
+  .week-hdr:hover { background: var(--bg); }
+  .week-lbl { font-size: 11px; font-weight: 600; color: var(--text2); }
+  .week-focus { font-size: 14px; font-weight: 500; margin-top: 1px; }
+  .week-chevron { color: var(--text3); transition: transform 150ms; display: flex; align-items: center; }
+  .week-body { display: none; padding: 8px 16px 12px; border-top: 1px solid var(--border); background: var(--bg); }
+  .week-body.open { display: block; }
+  .week-detail { display: flex; gap: 7px; align-items: center; padding: 3px 0; font-size: 13px; color: var(--text2); }
+
+  .chip-row { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 16px 12px; }
+  .chip { border: 1px solid var(--border2); border-radius: var(--r); padding: 3px 8px; font-size: 12px; color: var(--text2); }
+
+  /* Smart block */
+  .form-panel {
+    margin: 12px 16px; border: 1px solid var(--border);
+    border-radius: var(--r); background: var(--surface); overflow: hidden;
+  }
+  .form-note {
+    padding: 9px 12px; font-size: 13px; color: var(--text2); line-height: 1.5;
+    border-bottom: 1px solid var(--border); background: var(--bg);
+  }
+  .form-field { padding: 0 12px; border-bottom: 1px solid var(--border); }
+  .form-field:last-child { border-bottom: none; }
+  .form-field input {
+    width: 100%; background: transparent; border: none; outline: none;
+    color: var(--text); font-family: var(--font); font-size: 14px; padding: 10px 0;
+  }
+  .form-field input::placeholder { color: var(--text3); }
+
+  .conflict-block {
+    margin: 0 16px 8px; border: 1px solid #fca5a5;
+    border-radius: var(--r); background: var(--surface); overflow: hidden;
+  }
+  .conflict-hdr {
+    display: flex; align-items: center; gap: 6px; padding: 8px 12px;
+    border-bottom: 1px solid #fca5a5; font-size: 12px; font-weight: 600; color: var(--danger);
+    background: #fef2f2;
+  }
+  .conflict-body { padding: 12px; }
+  .conflict-title { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+  .conflict-sub { font-size: 13px; color: var(--text2); margin-bottom: 8px; }
+  .conflict-draft {
+    border: 1px solid var(--border); border-radius: var(--r); padding: 8px 10px;
+    font-size: 13px; color: var(--text2); font-style: italic; line-height: 1.5;
+    background: var(--bg); margin-bottom: 10px;
+  }
+
+  /* List */
+  .list-input-row {
+    display: flex; gap: 8px; padding: 10px 16px;
+    border-bottom: 1px solid var(--border); background: var(--surface);
+  }
+  .list-input-row input {
+    flex: 1; background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 7px 10px; color: var(--text);
+    font-family: var(--font); font-size: 14px; outline: none; transition: border-color 150ms;
+  }
+  .list-input-row input:focus { border-color: var(--primary); }
+  .list-input-row input::placeholder { color: var(--text3); }
+  .list-add-btn {
+    width: 32px; height: 32px; border-radius: var(--r);
+    background: var(--primary); border: 1px solid var(--primary);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    color: white; flex-shrink: 0; transition: background 150ms;
+  }
+  .list-add-btn:hover { background: var(--primary-hover); }
+  .list-row {
+    display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+    border-bottom: 1px solid var(--border); background: var(--surface); transition: background 150ms;
+  }
+  .list-row:hover { background: var(--bg); }
+  .list-row.done { opacity: 0.4; }
+  .list-row.done .l-name { text-decoration: line-through; }
+  .l-chk {
+    width: 16px; height: 16px; border-radius: var(--r-sm);
+    border: 1px solid var(--border2); background: var(--surface);
+    cursor: pointer; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 150ms; color: white;
+  }
+  .l-chk:hover { border-color: var(--success); }
+  .l-chk.done { background: var(--success); border-color: var(--success); }
+  .l-name { font-size: 14px; color: var(--text); }
+
+  /* Email */
+  .email-row { border-bottom: 1px solid var(--border); background: var(--surface); }
+  .email-row:first-child { border-top: 1px solid var(--border); }
+  .email-row.is-urgent  { border-left: 3px solid var(--danger); }
+  .email-row.is-sensitive { border-left: 3px solid var(--warning); }
+  .email-inner { padding: 12px 16px; }
+  .email-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+  .email-subject { font-size: 14px; font-weight: 500; color: var(--text); }
+  .email-tag {
+    font-size: 11px; font-weight: 500; padding: 1px 6px;
+    border-radius: var(--r-sm); border: 1px solid; flex-shrink: 0;
+  }
+  .tag-urgent  { color: var(--danger);  border-color: #fca5a5; background: #fef2f2; }
+  .tag-normal  { color: var(--primary); border-color: #bfdbfe; background: #eff6ff; }
+  .tag-low     { color: var(--text3);   border-color: var(--border); background: var(--bg); }
+  .email-summary { font-size: 13px; color: var(--text2); margin-bottom: 8px; }
+  .email-draft {
+    border: 1px solid var(--border); border-radius: var(--r); padding: 8px 10px;
+    font-size: 13px; color: var(--text2); font-style: italic;
+    line-height: 1.5; background: var(--bg); margin-bottom: 8px;
+  }
+  .row-actions { display: flex; gap: 6px; }
+  .btn-approve {
+    flex: 1; background: var(--primary); color: white;
+    border: 1px solid var(--primary); border-radius: var(--r);
+    padding: 7px 10px; font-size: 12px; font-weight: 500;
+    cursor: pointer; font-family: var(--font); transition: background 150ms;
+  }
+  .btn-approve:hover { background: var(--primary-hover); }
+  .btn-skip {
+    flex: 1; background: var(--surface); color: var(--text2);
+    border: 1px solid var(--border); border-radius: var(--r);
+    padding: 7px 10px; font-size: 12px; font-weight: 500;
+    cursor: pointer; font-family: var(--font); transition: background 150ms;
+  }
+  .btn-skip:hover { background: var(--bg); }
+  .manual-flag {
+    border: 1px solid #fcd34d; border-radius: var(--r); padding: 8px 10px;
+    font-size: 12px; color: var(--warning); background: #fffbeb;
+  }
+
+  /* Badge */
+  .badge {
+    display: inline-block; background: var(--bg); color: var(--text2);
+    border: 1px solid var(--border); font-size: 11px; font-weight: 500;
+    border-radius: var(--r-sm); padding: 0 5px; margin-left: 5px;
+  }
+
+  /* Empty */
+  .empty { text-align: center; padding: 40px 24px; color: var(--text2); }
+  .empty .ei { color: var(--text3); display: flex; justify-content: center; margin-bottom: 10px; }
+  .empty p { font-size: 13px; line-height: 1.5; }
+
+  .scroll { overflow-y: auto; flex: 1; }
+  .scroll::-webkit-scrollbar { display: none; }
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="ico-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></symbol>
+    <symbol id="ico-bolt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+    <symbol id="ico-shuffle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></symbol>
+    <symbol id="ico-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+    <symbol id="ico-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></symbol>
+    <symbol id="ico-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></symbol>
+    <symbol id="ico-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></symbol>
+    <symbol id="ico-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></symbol>
+    <symbol id="ico-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+    <symbol id="ico-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></symbol>
+    <symbol id="ico-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+    <symbol id="ico-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></symbol>
+    <symbol id="ico-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></symbol>
+    <symbol id="ico-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></symbol>
+    <symbol id="ico-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+    <symbol id="ico-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+    <symbol id="ico-inbox" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></symbol>
+    <symbol id="ico-sparkle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L13.5 8.5L19 10L13.5 11.5L12 17L10.5 11.5L5 10L10.5 8.5L12 3Z"/></symbol>
+    <symbol id="ico-leaf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></symbol>
+  </defs>
+</svg>
+
+<!-- TODAY -->
+<div class="screen active" id="s-today">
+  <div class="hdr">
+    <div class="hdr-app">Eva</div>
+    <div class="hdr-title" id="greeting">Good morning</div>
+    <div class="hdr-sub" id="today-date"></div>
+  </div>
+  <div id="eva-note" class="eva-note">
+    <div class="eva-note-lbl">Eva</div>
+    <div id="eva-text"></div>
+  </div>
+  <div class="loading" id="today-loading"><div class="spin"></div><span id="loading-msg">Loading tasks...</span></div>
+  <div id="tasks-list" class="scroll" style="padding-top:8px;"></div>
+  <div class="input-bar">
+    <input type="text" id="speak-input" placeholder="Add a task or give Eva an instruction..." autocomplete="off"/>
+    <button class="icon-btn" id="mic-btn" title="Voice input"><svg width="16" height="16"><use href="#ico-mic"/></svg></button>
+    <button class="icon-btn primary" id="send-btn"><svg width="13" height="13"><use href="#ico-send"/></svg></button>
+  </div>
+</div>
+
+<!-- FOCUS -->
+<div class="screen" id="s-focus">
+  <div class="hdr">
+    <div class="hdr-title">Focus</div>
+    <div class="hdr-sub">Top 3 tasks for right now</div>
+  </div>
+  <div style="height:12px;"></div>
+  <button class="btn" id="focus-btn"><svg width="14" height="14"><use href="#ico-bolt"/></svg> Activate Focus Mode</button>
+  <div class="loading" id="focus-loading"><div class="spin"></div><span>Scanning tasks...</span></div>
+  <div id="focus-results" class="scroll"></div>
+</div>
+
+<!-- SHIFT IT -->
+<div class="screen" id="s-shift">
+  <div class="hdr">
+    <div class="hdr-title">Shift It</div>
+    <div class="hdr-sub">Reschedule tasks across the next 72 hours</div>
+  </div>
+  <div class="select-panel">
+    <div class="select-panel-hdr">Select tasks to reschedule</div>
+    <div id="shift-task-list"></div>
+  </div>
+  <button class="btn" id="shift-btn"><svg width="14" height="14"><use href="#ico-shuffle"/></svg> Reschedule Selected</button>
+  <div class="loading" id="shift-loading"><div class="spin"></div><span>Finding available slots...</span></div>
+  <div id="shift-results" class="scroll"></div>
+</div>
+
+<!-- PLAN IT -->
+<div class="screen" id="s-plan">
+  <div class="hdr">
+    <div class="hdr-title">Plan It</div>
+    <div class="hdr-sub">Describe a goal and Eva will build a schedule</div>
+  </div>
+  <div class="textarea-wrap">
+    <textarea id="goal-input" placeholder="e.g. Run a 5K in 3 months, early mornings only." rows="3"></textarea>
+  </div>
+  <button class="btn" id="plan-btn"><svg width="14" height="14"><use href="#ico-sparkle"/></svg> Build My Plan</button>
+  <div class="loading" id="plan-loading"><div class="spin"></div><span>Building your plan...</span></div>
+  <div id="plan-results" class="scroll"></div>
+</div>
+
+<!-- MORE -->
+<div class="screen" id="s-more">
+  <div class="hdr">
+    <div class="hdr-title">Tools</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab active" onclick="switchTab('smartblock',this)"><svg width="14" height="14"><use href="#ico-shield"/></svg> Smart Block</button>
+    <button class="tab" onclick="switchTab('quicklist',this)"><svg width="14" height="14"><use href="#ico-list"/></svg> List</button>
+    <button class="tab" onclick="switchTab('emaildigest',this)"><svg width="14" height="14"><use href="#ico-mail"/></svg> Email</button>
+  </div>
+
+  <div id="tab-smartblock" class="scroll">
+    <div class="form-panel" style="margin-top:12px;">
+      <div class="form-note">Enter a new event and Eva will check for conflicts with protected commitments.</div>
+      <div class="form-field"><input type="text" id="sb-event" placeholder="Event title"/></div>
+      <div class="form-field"><input type="text" id="sb-date" placeholder="Date (YYYY-MM-DD)"/></div>
+      <div class="form-field"><input type="text" id="sb-time" placeholder="Time (15:00)"/></div>
+      <div class="form-field"><input type="text" id="sb-protected" placeholder="Protected commitments, comma-separated"/></div>
+    </div>
+    <button class="btn" onclick="runSmartBlock()"><svg width="14" height="14"><use href="#ico-shield"/></svg> Check for Conflicts</button>
+    <div class="loading" id="sb-loading"><div class="spin"></div><span>Checking calendar...</span></div>
+    <div id="sb-result"></div>
+  </div>
+
+  <div id="tab-quicklist" class="scroll" style="display:none;">
+    <div class="list-input-row">
+      <input type="text" id="list-input" placeholder="Add an item..." autocomplete="off"/>
+      <button class="list-add-btn" id="list-add-btn"><svg width="16" height="16"><use href="#ico-plus"/></svg></button>
+    </div>
+    <div class="loading" id="list-loading"><div class="spin"></div><span>Saving...</span></div>
+    <div style="padding:8px 16px 4px;font-size:11px;color:var(--text3);font-weight:500;">Items<span class="badge" id="list-count">0</span></div>
+    <div id="list-items"></div>
+  </div>
+
+  <div id="tab-emaildigest" class="scroll" style="display:none;">
+    <div class="form-panel" style="margin-top:12px;">
+      <div class="form-note">Paste email data as a JSON array. Eva summarises and drafts replies for your approval.</div>
+      <div style="padding:8px 12px;">
+        <textarea id="email-input" placeholder='[{"subject":"Q3 Report","body":"Please review ASAP"}]' rows="5" style="width:100%;background:transparent;border:none;outline:none;color:var(--text);font-family:var(--font);font-size:13px;resize:none;line-height:1.5;"></textarea>
+      </div>
+    </div>
+    <button class="btn" onclick="runEmailDigest()"><svg width="14" height="14"><use href="#ico-inbox"/></svg> Process Inbox</button>
+    <div class="loading" id="email-loading"><div class="spin"></div><span>Reading inbox...</span></div>
+    <div id="email-results"></div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <button class="nav-btn active" onclick="showScreen('today',this)"><svg width="18" height="18"><use href="#ico-home"/></svg><span class="nl">Today</span></button>
+  <button class="nav-btn" onclick="showScreen('focus',this)"><svg width="18" height="18"><use href="#ico-bolt"/></svg><span class="nl">Focus</span></button>
+  <button class="nav-btn" onclick="showScreen('shift',this)"><svg width="18" height="18"><use href="#ico-shuffle"/></svg><span class="nl">Shift</span></button>
+  <button class="nav-btn" onclick="showScreen('plan',this)"><svg width="18" height="18"><use href="#ico-target"/></svg><span class="nl">Plan</span></button>
+  <button class="nav-btn" onclick="showScreen('more',this)"><svg width="18" height="18"><use href="#ico-grid"/></svg><span class="nl">More</span></button>
+</nav>
+
+<script>
+const API = 'https://eva-ai-backend.onrender.com';
+const catColors = {work:'#1d4ed8',family:'#15803d',health:'#b45309',personal:'#7c3aed',errand:'#dc2626'};
+const chkSvg  = `<svg width="11" height="11"><use href="#ico-check"/></svg>`;
+const calSvg  = `<svg width="13" height="13"><use href="#ico-calendar"/></svg>`;
+const clkSvg  = `<svg width="13" height="13"><use href="#ico-clock"/></svg>`;
+const chvSvg  = `<svg width="14" height="14"><use href="#ico-chevron"/></svg>`;
+const alrtSvg = `<svg width="13" height="13"><use href="#ico-alert"/></svg>`;
+const chkBigSvg = `<svg width="13" height="13"><use href="#ico-check"/></svg>`;
+
+function showToast(msg,d=2800){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),d);}
+function fmt(d){if(!d)return'';return new Date(d).toLocaleDateString('en-GB',{weekday:'short',month:'short',day:'numeric'});}
+function setLoad(id,on,msg){const el=document.getElementById(id);el.classList.toggle('show',on);if(msg&&on){const s=el.querySelector('span');if(s)s.textContent=msg;}}
+
+let selectedTasks=new Set(), micListening=false;
+
+function showScreen(name,btn){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('s-'+name).classList.add('active');
+  if(btn)btn.classList.add('active');
+  document.querySelector('.input-bar').style.display=name==='today'?'flex':'none';
+  if(name==='today')loadTasks();
+  if(name==='shift')loadShiftTasks();
+  if(name==='more')loadQuickList();
+}
+
+function switchTab(tab,btn){
+  document.querySelectorAll('[id^="tab-"]').forEach(t=>t.style.display='none');
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+tab).style.display='block';
+  btn.classList.add('active');
+  if(tab==='quicklist')loadQuickList();
+}
+
+function init(){
+  const h=new Date().getHours();
+  document.getElementById('greeting').textContent=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+  document.getElementById('today-date').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+  loadTasks();
+}
+
+async function loadTasks(){
+  setLoad('today-loading',true,'Loading tasks...');
+  try{const r=await fetch(`${API}/tasks`);renderTasks(await r.json());}
+  catch(e){renderTasks([]);}
+  finally{setLoad('today-loading',false);}
+}
+
+function renderTasks(tasks){
+  const el=document.getElementById('tasks-list');
+  if(!tasks.length){el.innerHTML=`<div class="empty"><div class="ei"><svg width="28" height="28"><use href="#ico-sparkle"/></svg></div><p>No tasks yet.<br/>Use the input below to add one.</p></div>`;return;}
+  el.innerHTML=tasks.map(t=>`
+    <div class="task-row ${t.status==='done'?'done':''}" id="tc-${t.id}">
+      <div class="cat-bar" style="background:${catColors[t.category]||'#9ca3af'};"></div>
+      <div class="task-info">
+        <div class="task-title">${t.title}</div>
+        <div class="task-meta">${t.category}${t.due_date?' · '+fmt(t.due_date):''}${t.due_time?' · '+t.due_time:''}${t.reschedule_count>0?' · rescheduled '+t.reschedule_count+'×':''}</div>
+      </div>
+      <div class="chk ${t.status==='done'?'done':''}" onclick="toggleTask(${t.id},this)">${t.status==='done'?chkSvg:''}</div>
+    </div>`).join('');
+}
+
+async function toggleTask(id,el){
+  const isDone=!el.classList.contains('done');
+  el.classList.toggle('done',isDone);el.innerHTML=isDone?chkSvg:'';
+  document.getElementById('tc-'+id).classList.toggle('done',isDone);
+  try{await fetch(`${API}/tasks/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:isDone?'done':'pending'})});}catch(e){}
+}
+
+async function speakIt(input){
+  if(!input.trim())return;
+  setLoad('today-loading',true,'Processing...');
+  document.getElementById('speak-input').value='';
+  try{
+    const r=await fetch(`${API}/speak-it`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({voice_input:input})});
+    const d=await r.json();
+    if(d.status==='needs_clarification'){
+      const b=document.getElementById('eva-note');
+      document.getElementById('eva-text').textContent=d.question;
+      b.classList.add('show');setTimeout(()=>b.classList.remove('show'),7000);
+    }else if(d.status==='created'){
+      if(d.eva_quip){const b=document.getElementById('eva-note');document.getElementById('eva-text').textContent=d.eva_quip;b.classList.add('show');setTimeout(()=>b.classList.remove('show'),3500);}
+      loadTasks();
+    }
+  }catch(e){showToast("Request failed. Try again.");}
+  finally{setLoad('today-loading',false);}
+}
+
+document.getElementById('send-btn').addEventListener('click',()=>speakIt(document.getElementById('speak-input').value));
+document.getElementById('speak-input').addEventListener('keydown',e=>{if(e.key==='Enter')speakIt(e.target.value);});
+
+let recog;
+const micBtn=document.getElementById('mic-btn');
+if('webkitSpeechRecognition'in window||'SpeechRecognition'in window){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  recog=new SR();recog.continuous=false;recog.interimResults=true;recog.lang='en-GB';
+  recog.onstart=()=>{micListening=true;micBtn.classList.add('recording');document.getElementById('speak-input').placeholder='Listening...';};
+  recog.onresult=e=>{const t=Array.from(e.results).map(r=>r[0].transcript).join('');document.getElementById('speak-input').value=t;if(e.results[e.results.length-1].isFinal)speakIt(t);};
+  recog.onend=()=>{micListening=false;micBtn.classList.remove('recording');document.getElementById('speak-input').placeholder='Add a task or give Eva an instruction...';};
+  recog.onerror=()=>{micListening=false;micBtn.classList.remove('recording');showToast("Couldn't capture audio.");};
+  micBtn.addEventListener('click',()=>micListening?recog.stop():recog.start());
+}else{micBtn.addEventListener('click',()=>showToast("Voice input requires Chrome."));}
+
+document.getElementById('focus-btn').addEventListener('click',async()=>{
+  const btn=document.getElementById('focus-btn');
+  btn.disabled=true;btn.innerHTML=`<svg width="14" height="14"><use href="#ico-bolt"/></svg> Activating...`;
+  setLoad('focus-loading',true);document.getElementById('focus-results').innerHTML='';
+  try{
+    const r=await fetch(`${API}/focus-mode`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
+    const d=await r.json();
+    if(d.status==='no_tasks'){document.getElementById('focus-results').innerHTML=`<div class="empty"><div class="ei"><svg width="28" height="28"><use href="#ico-leaf"/></svg></div><p>${d.message}</p></div>`;return;}
+    const f=d.focus;
+    let html='';
+    if(f.eva_message)html+=`<div style="padding:10px 16px;font-size:13px;color:var(--text2);border-bottom:1px solid var(--border);">${f.eva_message}</div>`;
+    (f.top_3||[]).forEach((t,i)=>{html+=`<div class="priority-item"><div class="priority-num">${i+1}</div><div style="flex:1;"><div class="priority-title">${t.title}</div><div class="priority-reason">${t.reason}</div><span class="urgency-tag urgency-${t.urgency||'medium'}">${t.urgency||'medium'}</span></div></div>`;});
+    if((f.habit_audit||[]).length){html+=`<div class="notice-box danger" style="margin-top:8px;"><div class="notice-lbl">Habit audit</div>`;f.habit_audit.forEach(h=>{html+=`<div style="margin-top:3px;"><strong style="color:var(--text);">${h.title}</strong> — ${h.message}</div>`;});html+=`</div>`;}
+    if((f.deferred||[]).length){html+=`<div class="notice-box" style="margin-top:4px;"><div class="notice-lbl">Deferred</div>`;f.deferred.forEach(id=>{html+=`<div>Task #${id}</div>`;});html+=`</div>`;}
+    document.getElementById('focus-results').innerHTML=html;
+  }catch(e){showToast("Request failed. Try again.");}
+  finally{setLoad('focus-loading',false);btn.disabled=false;btn.innerHTML=`<svg width="14" height="14"><use href="#ico-bolt"/></svg> Activate Focus Mode`;}
+});
+
+async function loadShiftTasks(){
+  try{
+    const r=await fetch(`${API}/tasks?status=pending`);const tasks=await r.json();
+    const el=document.getElementById('shift-task-list');
+    if(!tasks.length){el.innerHTML='<div style="padding:12px;font-size:13px;color:var(--text2);">No pending tasks found.</div>';return;}
+    el.innerHTML=tasks.map(t=>`<div class="task-select-row" onclick="toggleSelect(${t.id},this)"><div class="sel-chk" id="sel-${t.id}"></div><div class="sel-label">${t.title}${t.due_date?' · '+fmt(t.due_date):''}</div></div>`).join('');
+  }catch(e){}
+}
+
+function toggleSelect(id,row){
+  const chk=document.getElementById('sel-'+id);
+  if(selectedTasks.has(id)){selectedTasks.delete(id);chk.classList.remove('selected');chk.innerHTML='';}
+  else{selectedTasks.add(id);chk.classList.add('selected');chk.innerHTML=chkSvg;}
+}
+
+document.getElementById('shift-btn').addEventListener('click',async()=>{
+  if(!selectedTasks.size){showToast("Select at least one task first.");return;}
+  const btn=document.getElementById('shift-btn');
+  btn.disabled=true;btn.innerHTML=`<svg width="14" height="14"><use href="#ico-shuffle"/></svg> Rescheduling...`;
+  setLoad('shift-loading',true);document.getElementById('shift-results').innerHTML='';
+  try{
+    const r=await fetch(`${API}/shift-it`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task_ids:[...selectedTasks]})});
+    const d=await r.json();const res=d.result;
+    let html=`<div class="result-block"><div class="result-block-hdr">Rescheduled</div>`;
+    if(res.summary)html+=`<div style="padding:8px 12px;font-size:13px;color:var(--text2);border-bottom:1px solid var(--border);">${res.summary}</div>`;
+    (res.rescheduled||[]).forEach(item=>{html+=`<div class="result-item"><div style="display:flex;align-items:center;gap:5px;margin-bottom:2px;">${calSvg}<strong>Task #${item.id}</strong> → ${item.new_date} at ${item.new_time}</div><span style="font-size:12px;">${item.reason}</span></div>`;});
+    html+=`</div>`;
+    if((res.flagged||[]).length){html+=`<div class="notice-box warn"><div class="notice-lbl">Attention needed</div>`;res.flagged.forEach(f=>{html+=`<div style="margin-top:3px;"><strong style="color:var(--text);">${f.title}</strong> — ${f.message}</div>`;});html+=`</div>`;}
+    document.getElementById('shift-results').innerHTML=html;
+    selectedTasks.clear();loadShiftTasks();loadTasks();showToast("Tasks rescheduled.");
+  }catch(e){showToast("Request failed. Try again.");}
+  finally{setLoad('shift-loading',false);btn.disabled=false;btn.innerHTML=`<svg width="14" height="14"><use href="#ico-shuffle"/></svg> Reschedule Selected`;}
+});
+
+async function runSmartBlock(){
+  const ev=document.getElementById('sb-event').value.trim();
+  const dt=document.getElementById('sb-date').value.trim();
+  const tm=document.getElementById('sb-time').value.trim();
+  const pr=document.getElementById('sb-protected').value.trim();
+  if(!ev||!dt||!tm){showToast("Event, date, and time are required.");return;}
+  const protected_events=pr.split(',').map(s=>s.trim()).filter(Boolean);
+  setLoad('sb-loading',true);document.getElementById('sb-result').innerHTML='';
+  try{
+    const r=await fetch(`${API}/smart-block`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({new_event_title:ev,new_event_date:dt,new_event_time:tm,protected_events})});
+    const d=await r.json();const res=d.result;
+    if(!res.conflict_detected){
+      document.getElementById('sb-result').innerHTML=`<div class="result-block" style="margin-top:4px;"><div class="result-item" style="display:flex;align-items:center;gap:6px;color:var(--success);font-weight:500;">${chkBigSvg} No conflict detected</div></div>`;
+    }else{
+      document.getElementById('sb-result').innerHTML=`<div class="conflict-block"><div class="conflict-hdr">${alrtSvg} Conflict detected</div><div class="conflict-body"><div class="conflict-title">${res.conflicting_with||'Protected event'} overlaps at ${tm}</div><div class="conflict-sub">${res.eva_quip||''}</div><div style="font-size:12px;color:var(--text2);margin:4px 0 10px;display:flex;align-items:center;gap:5px;">${clkSvg} Suggested time: ${res.suggested_new_time||'—'}</div><div class="conflict-draft">${res.draft_message||''}</div><div class="row-actions"><button class="btn-approve" onclick="showToast('Draft approved and sent.')">Approve &amp; Send</button><button class="btn-skip" onclick="document.getElementById('sb-result').innerHTML=''">Dismiss</button></div></div></div>`;
+    }
+  }catch(e){showToast("Request failed. Try again.");}
+  finally{setLoad('sb-loading',false);}
+}
+
+async function loadQuickList(){
+  setLoad('list-loading',true);
+  try{const r=await fetch(`${API}/quick-list`);renderList(await r.json());}
+  catch(e){}
+  finally{setLoad('list-loading',false);}
+}
+
+function renderList(items){
+  document.getElementById('list-count').textContent=items.length;
+  const el=document.getElementById('list-items');
+  if(!items.length){el.innerHTML=`<div class="empty"><div class="ei"><svg width="28" height="28"><use href="#ico-list"/></svg></div><p>List is empty.</p></div>`;return;}
+  el.innerHTML=items.map(item=>`<div class="list-row ${item.checked?'done':''}" id="li-${item.id}"><div class="l-chk ${item.checked?'done':''}" onclick="checkItem(${item.id},this)">${item.checked?chkSvg:''}</div><div class="l-name">${item.item}</div></div>`).join('');
+}
+
+async function checkItem(id,el){
+  el.classList.add('done');el.innerHTML=chkSvg;document.getElementById('li-'+id).classList.add('done');
+  try{await fetch(`${API}/quick-list/${id}/check`,{method:'PUT'});setTimeout(()=>loadQuickList(),700);}catch(e){}
+}
+
+document.getElementById('list-add-btn').addEventListener('click',addItem);
+document.getElementById('list-input').addEventListener('keydown',e=>{if(e.key==='Enter')addItem();});
+
+async function addItem(){
+  const input=document.getElementById('list-input');const val=input.value.trim();if(!val)return;
+  setLoad('list-loading',true);input.value='';
+  try{
+    const r=await fetch(`${API}/quick-list`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item:val})});
+    const d=await r.json();
+    if(d.status==='duplicate')showToast("Already on the list.");
+    else loadQuickList();
+  }catch(e){showToast("Request failed.");}
+  finally{setLoad('list-loading',false);}
+}
+
+document.getElementById('plan-btn').addEventListener('click',async()=>{
+  const goal=document.getElementById('goal-input').value.trim();
+  if(!goal){showToast("Enter a goal first.");return;}
+  const btn=document.getElementById('plan-btn');
+  btn.disabled=true;btn.innerHTML=`<svg width="14" height="14"><use href="#ico-sparkle"/></svg> Building...`;
+  setLoad('plan-loading',true);document.getElementById('plan-results').innerHTML='';
+  try{
+    const r=await fetch(`${API}/plan-it`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({goal})});
+    const d=await r.json();const p=d.plan;
+    let html=`<div class="result-block" style="margin:8px 16px 10px;"><div class="result-block-hdr">${p.goal_title}${p.target_date?' · '+fmt(p.target_date):''}</div><div class="result-item">${p.summary}</div></div>`;
+    if(p.snooze_warning)html+=`<div class="notice-box warn">${p.snooze_warning}</div>`;
+    html+=`<div style="padding:8px 16px 4px;font-size:11px;color:var(--text3);font-weight:500;">Weekly breakdown</div><div>`;
+    (p.weekly_sessions||[]).forEach(w=>{
+      html+=`<div class="week-row"><div class="week-hdr" onclick="const b=this.nextElementSibling;b.classList.toggle('open');this.querySelector('.week-chevron').style.transform=b.classList.contains('open')?'rotate(180deg)':''"><div><div class="week-lbl">Week ${w.week}${w.protected?' · Protected':''}</div><div class="week-focus">${w.focus}</div></div><span class="week-chevron">${chvSvg}</span></div><div class="week-body"><div class="week-detail">${calSvg} ${(w.suggested_days||[]).join(', ')}</div><div class="week-detail">${clkSvg} ${w.suggested_time||''} · ${w.session_duration_minutes} min · ${w.sessions_per_week}×/wk</div></div></div>`;
+    });
+    html+=`</div>`;
+    if((p.milestones||[]).length){html+=`<div style="padding:10px 16px 4px;font-size:11px;color:var(--text3);font-weight:500;">Milestones</div><div class="chip-row">`;p.milestones.forEach(m=>{html+=`<span class="chip">Wk ${m.week}: ${m.milestone}</span>`;});html+=`</div>`;}
+    if((p.tips||[]).length){html+=`<div style="padding:10px 16px 4px;font-size:11px;color:var(--text3);font-weight:500;">Tips</div>`;p.tips.forEach(t=>{html+=`<div style="padding:6px 16px;font-size:13px;color:var(--text2);border-bottom:1px solid var(--border);">${t}</div>`;});}
+    document.getElementById('plan-results').innerHTML=html;
+  }catch(e){showToast("Request failed. Try again.");}
+  finally{setLoad('plan-loading',false);btn.disabled=false;btn.innerHTML=`<svg width="14" height="14"><use href="#ico-sparkle"/></svg> Build My Plan`;}
+});
+
+async function runEmailDigest(){
+  const raw=document.getElementById('email-input').value.trim();
+  if(!raw){showToast("Paste email data first.");return;}
+  let emails;
+  try{emails=JSON.parse(raw);}catch(e){showToast("Invalid JSON format.");return;}
+  setLoad('email-loading',true);document.getElementById('email-results').innerHTML='';
+  try{
+    const r=await fetch(`${API}/email-digest`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({emails})});
+    const d=await r.json();const dig=d.digest;
+    let html=`<div style="padding:10px 16px;font-size:13px;color:var(--text2);border-bottom:1px solid var(--border);">${dig.eva_summary}</div>`;
+    html+=`<div style="padding:8px 16px;font-size:12px;color:var(--text2);border-bottom:1px solid var(--border);display:flex;gap:16px;"><span style="color:var(--danger);">${dig.urgent_count} urgent</span><span style="color:var(--primary);">${dig.normal_count} normal</span><span>${dig.low_count} low</span></div>`;
+    (dig.digest||[]).forEach(e=>{
+      const cls=e.urgency==='urgent'?'is-urgent':e.sensitivity==='high'?'is-sensitive':'';
+      const tagCls=e.urgency==='urgent'?'tag-urgent':e.urgency==='normal'?'tag-normal':'tag-low';
+      html+=`<div class="email-row ${cls}"><div class="email-inner"><div class="email-top"><div class="email-subject">${e.subject}</div><span class="email-tag ${tagCls}">${e.urgency}</span></div><div class="email-summary">${e.summary}</div>${e.requires_manual_review?`<div class="manual-flag"><strong>Manual review required.</strong> ${e.manual_review_reason||''}</div>`:''} ${e.draft_reply&&!e.requires_manual_review?`<div class="email-draft">${e.draft_reply}</div><div class="row-actions"><button class="btn-approve" onclick="showToast('Reply sent.')">Approve &amp; Send</button><button class="btn-skip" onclick="this.closest('.email-row').remove()">Skip</button></div>`:''}</div></div>`;
+    });
+    document.getElementById('email-results').innerHTML=`<div style="border-top:1px solid var(--border);">${html}</div>`;
+  }catch(e){showToast("Request failed. Try again.");}
+  finally{setLoad('email-loading',false);}
+}
+
+init();
+</script>
+</body>
+</html>
