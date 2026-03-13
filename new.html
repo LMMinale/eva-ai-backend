@@ -437,14 +437,15 @@
 
 <!-- TODAY -->
 <div class="screen active" id="s-today">
-  <div class="hdr">
-    <div class="hdr-app">Eva</div>
-    <div class="hdr-title" id="greeting">Good morning</div>
-    <div class="hdr-sub" id="today-date"></div>
-  </div>
-  <div id="eva-note" class="eva-note">
-    <div class="eva-note-lbl">Eva</div>
-    <div id="eva-text"></div>
+  <div class="hdr" style="display: flex; justify-content: space-between; align-items: flex-start;">
+    <div>
+      <div class="hdr-app">Eva App</div>
+      <div class="hdr-title" id="greeting">Good morning</div>
+      <div class="hdr-sub" id="today-date"></div>
+    </div>
+    <a href="index.html" class="icon-btn" title="Exit to Landing Page" style="text-decoration: none;">
+      <svg width="16" height="16"><use href="#ico-home"/></svg>
+    </a>
   </div>
   <div class="loading" id="today-loading"><div class="spin"></div><span id="loading-msg">Loading tasks...</span></div>
   <div id="tasks-list" class="scroll" style="padding-top:8px;"></div>
